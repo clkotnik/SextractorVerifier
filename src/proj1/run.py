@@ -1,65 +1,15 @@
+#!/usr/bin/python3
 '''
 Created on Aug 7, 2023
 
 @author: clkot
+
+This module handles the main processing to select images, process them with
+astrometry.net and source extractor.  It then runs a verification of the sources
+(objects) found against GAIA. 
 '''
 
-if __name__ == '__main__':
 
-
-
-#!/usr/bin/python3
-'''
-Created on Mar 23, 2020
-
-@author: CLKotnik
-
-This module handles the AAVSOnet pipeline processing to select a night's images, process
-all calibration files collected and setup the science images for processing with the
-most current calibration master files. 
-
-Apr 2021
-Phase 3 is a major release.  The entire pypline is now python.  As part of that, this
-module now takes on this functionality:
-    - update the image_info table.  Initially, this table is in a different DB than cal_info.
-      This may change, but requires changes to the RoM web service to do so.  The new logic will
-      replace all existing rows for a night to avoid the inaccurate data resulting from the
-      current logic.
-    - call the thumbnail module
-    - call the astrometry and photometry fortran programs
-    - compress the images
-    - there are a couple of minor changes to the config file so that a single config file
-      can support the entire pypline
-    - the logging now goes to a file
-    
-    
-Nov 2020
-Phase 2 is a major release.  It contains this additional functionality:
-
-    Calibration master creation and image calibration is performed with python routines
-    rather than IRAF.  This provides a number of enhanced features:
-        - darks no longer need be at fixed exposure durations - just a reasonable spread
-        - image duplication will be minimized
-        - the a9999.fits files are no longer created
-
-    TO DO: When masterdir option is used, the HTML report incorrectly identifies the cals
-    in use.  See for example bsm_nh2/201109.
-    
-    Handle bad FITS images and do a more controlled HALT.
-    
-    Do not include raw files with names like "*oldzip"
-       
-    Provide explicit HALT message when web service to get telescopes is  not available  
-    
-CLKotnik
-Jul 1 2023
-Add configuration option to enable/disable FITS header update of OBJCTRA/DEC.  If
-selected, call for the update after astrometry.net is run.
-
-Also, add scriptsdir and ftpdir to config file options as documentation so this
-program has a complete list.  These are used elsewhere.
-    
-'''
 import subprocess
 import sys
 import os
@@ -72,14 +22,8 @@ from astropy.io import fits
 from astropy.nddata.blocks import block_reduce,block_replicate
 import bz2
 
-from pypline.filesys import FileSys
-from pypline.filelist import FileList
-from pypline.observatory import Observatories
-from pypline.database import CalInfo,ImageInfo
-from pypline.imgproc_py import ImgProc
-from pypline.thumbnail import make_all_tn
-from pypline.astrometry import add_astrometry
-from pypline.sextractor import extract_processing
+from astrometry import add_astrometry
+from sextractor import extract_processing
 # suppress runtime and astropy warnings
 import warnings
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
@@ -87,7 +31,6 @@ warnings.filterwarnings('ignore', category=fits.column.VerifyWarning)
 warnings.filterwarnings('ignore', category=fits.card.VerifyWarning)
 
 
-_svn_id_ = "$Id: pypline_calibration.py 1457 2023-07-19 21:31:16Z kotnik $ :"
 ######################################################################
 # This section contains parameters that control the creation and
 # application of master files.  The are not input from a config file,
